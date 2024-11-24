@@ -9,6 +9,9 @@ const Students = lazy(() => import('./Students'))
 const Payments = lazy(() => import('./Payments'))
 const Reports = lazy(() => import('./Reports'))
 const AuditLogs = lazy(() => import('./AuditLogs'))
+const Profile = lazy(() => import('./Profile'))
+const Tickets = lazy(() => import('./Tickets'))
+const Settings = lazy(() => import('./Settings'))
 
 // Animation variants
 const pageVariants = {
@@ -59,10 +62,13 @@ function AdminDashboard() {
           >
             <Routes location={location}>
               <Route path="overview" element={<Overview />} />
-              <Route path="students/*" element={<Students />} />
+              <Route path="students" element={<Students />} />
               <Route path="payments/*" element={<Payments />} />
               <Route path="reports" element={<Reports />} />
               <Route path="audit-logs" element={<AuditLogs />} />
+              <Route path="profile" element={<Profile />} />
+              <Route path="tickets" element={<Tickets />} />
+              <Route path="settings" element={<Settings />} />
               <Route path="" element={<Navigate to="overview" replace />} />
             </Routes>
           </motion.div>

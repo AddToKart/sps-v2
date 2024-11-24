@@ -7,6 +7,7 @@ import StudentDashboardLayout from '@/components/student/DashboardLayout'
 const Overview = lazy(() => import('./Overview'))
 const Payments = lazy(() => import('./Payments'))
 const Tickets = lazy(() => import('./Tickets'))
+const Profile = lazy(() => import('./Profile'))
 
 // Animation variants
 const pageVariants = {
@@ -59,6 +60,7 @@ function StudentDashboard() {
               <Route path="overview" element={<Overview />} />
               <Route path="payments/*" element={<Payments />} />
               <Route path="tickets" element={<Tickets />} />
+              <Route path="profile" element={<Profile />} />
               <Route path="" element={<Navigate to="overview" replace />} />
             </Routes>
           </motion.div>

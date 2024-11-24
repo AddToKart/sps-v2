@@ -1,273 +1,279 @@
 import { useState } from 'react'
-import { FiDollarSign, FiCalendar, FiClock, FiCheckCircle } from 'react-icons/fi'
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-  ChartOptions
-} from 'chart.js'
-import { Line } from 'react-chartjs-2'
+import { FiDollarSign, FiCalendar, FiClock, FiSettings, FiUsers, FiAlertCircle, FiBell } from 'react-icons/fi'
 
-// Register ChartJS components
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend
-)
+interface PaymentReminder {
+  id: string
+  type: 'Due Date' | 'Overdue' | 'Custom'
+  daysBeforeDue: number
+  message: string
+  isActive: boolean
+}
 
-// Chart options with proper typing
-const chartOptions: ChartOptions<'line'> = {
-  responsive: true,
-  maintainAspectRatio: false,
-  plugins: {
-    legend: {
-      display: false,
-    },
-    tooltip: {
-      mode: 'index',
-      intersect: false,
-    },
-  },
-  scales: {
-    y: {
-      beginAtZero: true,
-      grid: {
-        color: '#f0f0f0',
-      },
-      ticks: {
-        callback: (value) => '₱' + value.toLocaleString()
-      }
-    },
-    x: {
-      grid: {
-        display: false,
-      },
-    },
-  },
+interface PaymentPlan {
+  id: string
+  name: string
+  installments: number
+  intervalDays: number
+  downPaymentPercentage: number
+  isActive: boolean
 }
 
 function Payments() {
-  // Stats data for the top cards
-  const stats = [
-    { label: 'Total Collections', value: '₱523,456', icon: FiDollarSign, trend: '+8.2%' },
-    { label: 'This Month', value: '₱123,456', icon: FiCalendar, trend: '+12.3%' },
-    { label: 'Pending', value: '₱45,678', icon: FiClock, trend: '-2.1%' },
-    { label: 'Success Rate', value: '95%', icon: FiCheckCircle, trend: '+1.2%' },
-  ]
+  const [activeTab, setActiveTab] = useState('reminders')
+  const [showReminderModal, setShowReminderModal] = useState(false)
+  const [showPlanModal, setShowPlanModal] = useState(false)
 
-  // Payment methods filter options
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>('all')
-  const [selectedDateRange, setSelectedDateRange] = useState<string>('this-month')
-
-  // Daily collections data for the chart
-  const dailyCollectionsData = {
-    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-    datasets: [
-      {
-        label: 'Collections',
-        data: [12500, 15000, 18000, 14500, 19000, 16000, 13500],
-        borderColor: '#0ea5e9',
-        backgroundColor: '#0ea5e940',
-        fill: true,
-      }
-    ],
-  }
-
-  // Recent payments data
-  const recentPayments = [
+  // Payment Reminders State
+  const [reminders, setReminders] = useState<PaymentReminder[]>([
     {
-      id: 'PAY-001',
-      student: 'John Doe',
-      amount: '₱15,000',
-      method: 'GCash',
-      status: 'Completed',
-      date: '2024-03-20',
+      id: '1',
+      type: 'Due Date',
+      daysBeforeDue: 7,
+      message: 'Your payment is due in {days} days. Total amount: {amount}',
+      isActive: true
     },
     {
-      id: 'PAY-002',
-      student: 'Jane Smith',
-      amount: '₱12,000',
-      method: 'Bank Transfer',
-      status: 'Pending',
-      date: '2024-03-20',
+      id: '2',
+      type: 'Overdue',
+      daysBeforeDue: 1,
+      message: 'Your payment is overdue by {days} days. Please settle immediately.',
+      isActive: true
+    }
+  ])
+
+  // Payment Plans State
+  const [paymentPlans, setPaymentPlans] = useState<PaymentPlan[]>([
+    {
+      id: '1',
+      name: 'Monthly Plan',
+      installments: 10,
+      intervalDays: 30,
+      downPaymentPercentage: 20,
+      isActive: true
     },
     {
-      id: 'PAY-003',
-      student: 'Bob Johnson',
-      amount: '₱18,000',
-      method: 'Credit Card',
-      status: 'Failed',
-      date: '2024-03-19',
-    },
-  ]
+      id: '2',
+      name: 'Quarterly Plan',
+      installments: 4,
+      intervalDays: 90,
+      downPaymentPercentage: 25,
+      isActive: true
+    }
+  ])
 
   return (
-    <div className="w-full h-full p-4 bg-background">
-      <h1 className="text-base sm:text-xl font-bold mb-4 text-tertiary">Payments Management</h1>
-      
-      {/* Stats Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-        {stats.map(({ label, value, icon: Icon, trend }) => (
-          <div key={label} className="bg-surface rounded-lg shadow-sm hover:shadow-md transition-shadow p-4">
-            <div className="flex items-center justify-between">
-              <Icon className="w-5 h-5 text-primary" />
-              <span className={`text-xs ${
-                trend.startsWith('+') ? 'text-emerald-500' : 'text-rose-500'
-              }`}>
-                {trend}
-              </span>
-            </div>
-            <h3 className="text-gray-500 text-xs mt-2">{label}</h3>
-            <p className="text-lg font-bold text-tertiary">{value}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* Filters */}
-      <div className="bg-surface rounded-lg shadow-sm p-4 mb-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Payment Method</label>
-            <select
-              value={selectedPaymentMethod}
-              onChange={(e) => setSelectedPaymentMethod(e.target.value)}
-              className="block w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-primary focus:border-primary"
-            >
-              <option value="all">All Methods</option>
-              <option value="gcash">GCash</option>
-              <option value="bank">Bank Transfer</option>
-              <option value="card">Credit Card</option>
-              <option value="cash">Cash</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Date Range</label>
-            <select
-              value={selectedDateRange}
-              onChange={(e) => setSelectedDateRange(e.target.value)}
-              className="block w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-primary focus:border-primary"
-            >
-              <option value="today">Today</option>
-              <option value="this-week">This Week</option>
-              <option value="this-month">This Month</option>
-              <option value="custom">Custom Range</option>
-            </select>
-          </div>
-          <div className="flex items-end">
-            <button className="w-full bg-primary text-white px-4 py-2 rounded-lg hover:bg-secondary transition-colors">
-              Apply Filters
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Charts Container */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-4">
-        {/* Collections Chart */}
-        <div className="lg:col-span-8 bg-surface rounded-lg shadow-sm p-4">
-          <h3 className="text-sm font-semibold mb-4 text-tertiary">Daily Collections</h3>
-          <div className="w-full h-[300px]">
-            <Line 
-              data={dailyCollectionsData}
-              options={chartOptions}
-            />
-          </div>
-        </div>
+    <div className="w-full p-4 bg-background">
+      <div className="max-w-6xl mx-auto">
+        <h1 className="text-xl font-bold mb-6 text-tertiary">Payment Management</h1>
 
         {/* Quick Actions */}
-        <div className="lg:col-span-4 bg-surface rounded-lg shadow-sm p-4">
-          <h3 className="text-sm font-semibold mb-4 text-tertiary">Quick Actions</h3>
-          <div className="space-y-2">
-            <button className="w-full bg-primary text-white px-4 py-2 rounded-lg hover:bg-secondary transition-colors">
-              Record Payment
-            </button>
-            <button className="w-full border border-primary text-primary px-4 py-2 rounded-lg hover:bg-primary hover:text-white transition-colors">
-              Generate Receipt
-            </button>
-            <button className="w-full border border-primary text-primary px-4 py-2 rounded-lg hover:bg-primary hover:text-white transition-colors">
-              Export Report
-            </button>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div className="bg-surface p-4 rounded-lg shadow-sm">
+            <div className="flex items-center justify-between mb-2">
+              <FiUsers className="w-5 h-5 text-primary" />
+              <span className="text-xs text-rose-500">15 Students</span>
+            </div>
+            <h3 className="text-sm text-gray-500">Overdue Payments</h3>
+            <p className="text-lg font-bold text-tertiary">₱245,000</p>
+          </div>
+
+          <div className="bg-surface p-4 rounded-lg shadow-sm">
+            <div className="flex items-center justify-between mb-2">
+              <FiCalendar className="w-5 h-5 text-primary" />
+              <span className="text-xs text-emerald-500">Due This Week</span>
+            </div>
+            <h3 className="text-sm text-gray-500">Upcoming Payments</h3>
+            <p className="text-lg font-bold text-tertiary">₱180,000</p>
+          </div>
+
+          <div className="bg-surface p-4 rounded-lg shadow-sm">
+            <div className="flex items-center justify-between mb-2">
+              <FiBell className="w-5 h-5 text-primary" />
+              <span className="text-xs text-blue-500">Last 7 Days</span>
+            </div>
+            <h3 className="text-sm text-gray-500">Reminders Sent</h3>
+            <p className="text-lg font-bold text-tertiary">45</p>
           </div>
         </div>
-      </div>
 
-      {/* Recent Payments Table */}
-      <div className="bg-surface rounded-lg shadow-sm">
-        <div className="p-4">
-          <h2 className="text-sm font-semibold mb-4 text-tertiary">Recent Payments</h2>
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead>
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Payment ID
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Student
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Amount
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Method
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Date
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {recentPayments.map((payment) => (
-                  <tr key={payment.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {payment.id}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {payment.student}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {payment.amount}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {payment.method}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                        payment.status === 'Completed' 
-                          ? 'bg-green-100 text-green-800'
-                          : payment.status === 'Pending'
-                          ? 'bg-yellow-100 text-yellow-800'
-                          : 'bg-red-100 text-red-800'
-                      }`}>
-                        {payment.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {payment.date}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      <button className="text-primary hover:text-secondary mr-2">View</button>
-                      <button className="text-primary hover:text-secondary">Receipt</button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        {/* Main Content Tabs */}
+        <div className="bg-surface rounded-lg shadow-sm">
+          <div className="border-b">
+            <nav className="flex">
+              <button
+                onClick={() => setActiveTab('reminders')}
+                className={`px-6 py-3 text-sm font-medium border-b-2 ${
+                  activeTab === 'reminders'
+                    ? 'border-primary text-primary'
+                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                Payment Reminders
+              </button>
+              <button
+                onClick={() => setActiveTab('plans')}
+                className={`px-6 py-3 text-sm font-medium border-b-2 ${
+                  activeTab === 'plans'
+                    ? 'border-primary text-primary'
+                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                Payment Plans
+              </button>
+              <button
+                onClick={() => setActiveTab('automation')}
+                className={`px-6 py-3 text-sm font-medium border-b-2 ${
+                  activeTab === 'automation'
+                    ? 'border-primary text-primary'
+                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                Automation Rules
+              </button>
+            </nav>
+          </div>
+
+          <div className="p-6">
+            {activeTab === 'reminders' && (
+              <div>
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-lg font-semibold">Payment Reminders</h2>
+                  <button
+                    onClick={() => setShowReminderModal(true)}
+                    className="bg-primary text-white px-4 py-2 rounded-lg hover:bg-secondary"
+                  >
+                    Add Reminder
+                  </button>
+                </div>
+
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead>
+                      <tr>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Days</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Message</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                      {reminders.map((reminder) => (
+                        <tr key={reminder.id}>
+                          <td className="px-4 py-3 text-sm">{reminder.type}</td>
+                          <td className="px-4 py-3 text-sm">{reminder.daysBeforeDue}</td>
+                          <td className="px-4 py-3 text-sm">{reminder.message}</td>
+                          <td className="px-4 py-3 text-sm">
+                            <span className={`px-2 py-1 rounded-full text-xs ${
+                              reminder.isActive ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-100 text-gray-800'
+                            }`}>
+                              {reminder.isActive ? 'Active' : 'Inactive'}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-sm">
+                            <button className="text-primary hover:text-secondary mr-2">Edit</button>
+                            <button className="text-red-600 hover:text-red-800">Delete</button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'plans' && (
+              <div>
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-lg font-semibold">Payment Plans</h2>
+                  <button
+                    onClick={() => setShowPlanModal(true)}
+                    className="bg-primary text-white px-4 py-2 rounded-lg hover:bg-secondary"
+                  >
+                    Add Plan
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {paymentPlans.map((plan) => (
+                    <div key={plan.id} className="border rounded-lg p-4">
+                      <div className="flex justify-between items-start mb-2">
+                        <h3 className="font-semibold">{plan.name}</h3>
+                        <span className={`px-2 py-1 rounded-full text-xs ${
+                          plan.isActive ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-100 text-gray-800'
+                        }`}>
+                          {plan.isActive ? 'Active' : 'Inactive'}
+                        </span>
+                      </div>
+                      <div className="space-y-2 text-sm text-gray-600">
+                        <p>Installments: {plan.installments}</p>
+                        <p>Interval: {plan.intervalDays} days</p>
+                        <p>Down Payment: {plan.downPaymentPercentage}%</p>
+                      </div>
+                      <div className="mt-4 flex justify-end space-x-2">
+                        <button className="text-primary hover:text-secondary">Edit</button>
+                        <button className="text-red-600 hover:text-red-800">Delete</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'automation' && (
+              <div>
+                <h2 className="text-lg font-semibold mb-4">Automation Rules</h2>
+                <div className="space-y-4">
+                  <div className="border rounded-lg p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        <FiClock className="w-5 h-5 text-primary mr-2" />
+                        <div>
+                          <h3 className="font-medium">Late Payment Detection</h3>
+                          <p className="text-sm text-gray-500">Automatically flag overdue payments</p>
+                        </div>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" className="sr-only peer" defaultChecked />
+                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                      </label>
+                    </div>
+                  </div>
+
+                  <div className="border rounded-lg p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        <FiBell className="w-5 h-5 text-primary mr-2" />
+                        <div>
+                          <h3 className="font-medium">Automatic Reminders</h3>
+                          <p className="text-sm text-gray-500">Send reminders based on schedule</p>
+                        </div>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" className="sr-only peer" defaultChecked />
+                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                      </label>
+                    </div>
+                  </div>
+
+                  <div className="border rounded-lg p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        <FiAlertCircle className="w-5 h-5 text-primary mr-2" />
+                        <div>
+                          <h3 className="font-medium">Payment Notifications</h3>
+                          <p className="text-sm text-gray-500">Send notifications for new payments</p>
+                        </div>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" className="sr-only peer" defaultChecked />
+                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

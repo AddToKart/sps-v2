@@ -27,7 +27,7 @@ function Overview() {
   }
 
   return (
-    <div className="w-full p-4 bg-background">
+    <div className="w-full p-4 bg-background dark:bg-gray-900">
       {/* Student Info Card */}
       <div className="bg-surface rounded-lg shadow-sm p-4 mb-4">
         <div className="flex justify-between items-start">
@@ -47,31 +47,31 @@ function Overview() {
 
       {/* Balance Summary */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
-        <div className="bg-surface rounded-lg shadow-sm p-4">
+        <div className="bg-surface dark:bg-gray-800 rounded-lg shadow-sm p-4">
           <div className="flex items-center justify-between">
             <FiDollarSign className="w-5 h-5 text-primary" />
             <span className="text-xs text-rose-500">Due {studentInfo.dueDate}</span>
           </div>
-          <h3 className="text-gray-500 text-xs mt-2">Total Balance</h3>
-          <p className="text-lg font-bold text-tertiary">₱{studentInfo.totalBalance.toLocaleString()}</p>
+          <h3 className="text-gray-500 dark:text-gray-400 text-xs mt-2">Total Balance</h3>
+          <p className="text-lg font-bold text-tertiary dark:text-white">₱{studentInfo.totalBalance.toLocaleString()}</p>
         </div>
         
-        <div className="bg-surface rounded-lg shadow-sm p-4">
+        <div className="bg-surface dark:bg-gray-800 rounded-lg shadow-sm p-4">
           <div className="flex items-center justify-between">
             <FiClock className="w-5 h-5 text-primary" />
             <span className="text-xs text-emerald-500">On Track</span>
           </div>
-          <h3 className="text-gray-500 text-xs mt-2">Payment Status</h3>
-          <p className="text-lg font-bold text-tertiary">Regular Payment</p>
+          <h3 className="text-gray-500 dark:text-gray-400 text-xs mt-2">Payment Status</h3>
+          <p className="text-lg font-bold text-tertiary dark:text-white">Regular Payment</p>
         </div>
 
-        <div className="bg-surface rounded-lg shadow-sm p-4">
+        <div className="bg-surface dark:bg-gray-800 rounded-lg shadow-sm p-4">
           <div className="flex items-center justify-between">
             <FiCalendar className="w-5 h-5 text-primary" />
-            <span className="text-xs text-gray-500">Next Due Date</span>
+            <span className="text-xs text-gray-500 dark:text-gray-400">Next Due Date</span>
           </div>
-          <h3 className="text-gray-500 text-xs mt-2">Due Date</h3>
-          <p className="text-lg font-bold text-tertiary">April 15, 2024</p>
+          <h3 className="text-gray-500 dark:text-gray-400 text-xs mt-2">Due Date</h3>
+          <p className="text-lg font-bold text-tertiary dark:text-white">April 15, 2024</p>
         </div>
       </div>
 
@@ -120,9 +120,9 @@ function Overview() {
 
       {/* Payment Modal */}
       {showPaymentModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg max-w-md w-full p-6">
-            <h2 className="text-lg font-semibold mb-4">Make Payment</h2>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-surface dark:bg-gray-800 rounded-lg p-6 w-full max-w-md">
+            <h2 className="text-lg font-semibold mb-4 text-white">Make Payment</h2>
             
             <div className="space-y-4">
               <div>

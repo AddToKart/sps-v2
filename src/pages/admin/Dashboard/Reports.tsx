@@ -1,269 +1,382 @@
 import { useState } from 'react'
-import { FiMessageSquare, FiClock, FiCheckCircle, FiAlertCircle } from 'react-icons/fi'
+import { FiDownload, FiFilter, FiDollarSign, FiTrendingUp, FiPieChart, FiUsers } from 'react-icons/fi'
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  ArcElement,
+  Title,
+  Tooltip,
+  Legend,
+  ChartOptions
+} from 'chart.js'
+import { Line, Bar, Doughnut } from 'react-chartjs-2'
 
-interface Ticket {
-  id: string
-  student: string
-  subject: string
-  status: 'Open' | 'In Progress' | 'Resolved' | 'Closed'
-  priority: 'Low' | 'Medium' | 'High'
-  createdAt: string
-  lastUpdated: string
-  messages: {
-    sender: string
-    message: string
-    timestamp: string
-  }[]
-}
+// Register ChartJS components
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  ArcElement,
+  Title,
+  Tooltip,
+  Legend
+)
 
 function Reports() {
-  const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null)
-  const [newMessage, setNewMessage] = useState('')
-  const [filterStatus, setFilterStatus] = useState('all')
+  const [selectedDateRange, setSelectedDateRange] = useState('this-month')
+  const [selectedReport, setSelectedReport] = useState('all')
 
-  // Dummy tickets data
-  const tickets: Ticket[] = [
-    {
-      id: 'TCKT-001',
-      student: 'John Doe',
-      subject: 'Payment Verification Issue',
-      status: 'Open',
-      priority: 'High',
-      createdAt: '2024-03-20 09:30 AM',
-      lastUpdated: '2024-03-20 09:30 AM',
-      messages: [
-        {
-          sender: 'John Doe',
-          message: 'I made a payment yesterday but it\'s not reflecting in my account.',
-          timestamp: '2024-03-20 09:30 AM'
-        }
-      ]
+  // Dummy data for charts
+  const collectionTrendData = {
+    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+    datasets: [
+      {
+        label: 'Collections',
+        data: [150000, 180000, 165000, 195000, 185000, 200000],
+        borderColor: '#0ea5e9',
+        backgroundColor: '#0ea5e940',
+        fill: true,
+      }
+    ]
+  }
+
+  const paymentMethodData = {
+    labels: ['GCash', 'Bank Transfer', 'Cash', 'Credit Card'],
+    datasets: [
+      {
+        data: [156, 98, 45, 23],
+        backgroundColor: [
+          '#0ea5e9',
+          '#0284c7',
+          '#0369a1',
+          '#075985'
+        ],
+      }
+    ]
+  }
+
+  const collectionRateData = {
+    labels: ['STEM', 'ABM', 'ICT'],
+    datasets: [
+      {
+        label: 'Collection Rate',
+        data: [95, 88, 92],
+        backgroundColor: '#0ea5e9',
+      }
+    ]
+  }
+
+  // Chart options
+  const lineOptions: ChartOptions<'line'> = {
+    responsive: true,
+    plugins: {
+      legend: {
+        display: false,
+      },
+      title: {
+        display: true,
+        text: 'Monthly Collections Trend'
+      }
     },
-    {
-      id: 'TCKT-002',
-      student: 'Jane Smith',
-      subject: 'Receipt Not Received',
-      status: 'In Progress',
-      priority: 'Medium',
-      createdAt: '2024-03-19 02:15 PM',
-      lastUpdated: '2024-03-20 10:45 AM',
-      messages: [
-        {
-          sender: 'Jane Smith',
-          message: 'I haven\'t received my payment receipt via email.',
-          timestamp: '2024-03-19 02:15 PM'
-        },
-        {
-          sender: 'Admin',
-          message: 'We\'re looking into this issue. Could you please provide your transaction reference number?',
-          timestamp: '2024-03-20 10:45 AM'
+    scales: {
+      y: {
+        beginAtZero: true,
+        ticks: {
+          callback: (value) => '₱' + value.toLocaleString()
         }
-      ]
-    },
-    {
-      id: 'TCKT-003',
-      student: 'Bob Wilson',
-      subject: 'Payment Plan Inquiry',
-      status: 'Resolved',
-      priority: 'Low',
-      createdAt: '2024-03-18 11:20 AM',
-      lastUpdated: '2024-03-19 03:30 PM',
-      messages: [
-        {
-          sender: 'Bob Wilson',
-          message: 'I would like to request for a payment plan extension.',
-          timestamp: '2024-03-18 11:20 AM'
-        },
-        {
-          sender: 'Admin',
-          message: 'Your payment plan has been extended by 30 days.',
-          timestamp: '2024-03-19 03:30 PM'
-        }
-      ]
+      }
     }
-  ]
+  }
 
-  // Stats for the dashboard
+  const barOptions: ChartOptions<'bar'> = {
+    responsive: true,
+    plugins: {
+      legend: {
+        display: false,
+      },
+      title: {
+        display: true,
+        text: 'Collection Rate by Strand'
+      }
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        max: 100,
+        ticks: {
+          callback: (value) => value + '%'
+        }
+      }
+    }
+  }
+
+  const doughnutOptions: ChartOptions<'doughnut'> = {
+    responsive: true,
+    plugins: {
+      legend: {
+        position: 'right',
+      },
+      title: {
+        display: true,
+        text: 'Payment Methods Distribution'
+      }
+    }
+  }
+
+  // Stats data
   const stats = [
-    { label: 'Total Tickets', value: '45', icon: FiMessageSquare, trend: '+5.2%' },
-    { label: 'Open Tickets', value: '12', icon: FiClock, trend: '-2.1%' },
-    { label: 'Resolved Today', value: '8', icon: FiCheckCircle, trend: '+12.3%' },
-    { label: 'Avg Response Time', value: '2.5h', icon: FiAlertCircle, trend: '-8.4%' },
+    {
+      label: 'Total Collections',
+      value: '₱1,075,000',
+      trend: '+12.5%',
+      icon: FiDollarSign
+    },
+    {
+      label: 'Collection Rate',
+      value: '92%',
+      trend: '+3.2%',
+      icon: FiTrendingUp
+    },
+    {
+      label: 'Outstanding Balance',
+      value: '₱125,000',
+      trend: '-8.4%',
+      icon: FiPieChart
+    }
   ]
 
-  const handleSendMessage = () => {
-    if (!newMessage.trim() || !selectedTicket) return
-
-    // In a real app, this would be handled by your backend
-    const updatedTicket = {
-      ...selectedTicket,
-      messages: [
-        ...selectedTicket.messages,
-        {
-          sender: 'Admin',
-          message: newMessage,
-          timestamp: new Date().toLocaleString()
-        }
-      ],
-      lastUpdated: new Date().toLocaleString()
-    }
-    setSelectedTicket(updatedTicket)
-    setNewMessage('')
+  const handleGenerateReport = () => {
+    // Handle report generation logic here
+    console.log('Generating report:', { selectedDateRange, selectedReport })
   }
 
   return (
-    <div className="w-full h-full p-4 bg-background">
-      <h1 className="text-base sm:text-xl font-bold mb-4 text-tertiary">Support Tickets</h1>
+    <div className="w-full p-4 bg-background">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-xl font-bold text-tertiary">Financial Reports</h1>
+        <button
+          onClick={handleGenerateReport}
+          className="flex items-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-secondary"
+        >
+          <FiDownload className="w-4 h-4 mr-2" />
+          Export Report
+        </button>
+      </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-        {stats.map(({ label, value, icon: Icon, trend }) => (
-          <div key={label} className="bg-surface rounded-lg shadow-sm hover:shadow-md transition-shadow p-4">
-            <div className="flex items-center justify-between">
-              <Icon className="w-5 h-5 text-primary" />
-              <span className={`text-xs ${
-                trend.startsWith('+') ? 'text-emerald-500' : 'text-rose-500'
-              }`}>
-                {trend}
-              </span>
+      {/* Stats Grid - Similar to Overview */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        {stats.map(({ label, value, trend, icon: Icon }) => (
+          <div key={label} className="bg-surface p-4 rounded-lg shadow-sm">
+            <div className="flex justify-between items-start">
+              <div>
+                <p className="text-sm text-gray-500">{label}</p>
+                <p className="text-xl font-semibold mt-1">{value}</p>
+              </div>
+              <div className="flex flex-col items-end">
+                <Icon className="w-5 h-5 text-primary" />
+                <span className={`text-sm mt-2 ${
+                  trend.startsWith('+') ? 'text-green-500' : 'text-red-500'
+                }`}>
+                  {trend}
+                </span>
+              </div>
             </div>
-            <h3 className="text-gray-500 text-xs mt-2">{label}</h3>
-            <p className="text-lg font-bold text-tertiary">{value}</p>
           </div>
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-        {/* Tickets List */}
-        <div className="lg:col-span-5 bg-surface rounded-lg shadow-sm">
-          <div className="p-4">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-sm font-semibold text-tertiary">Tickets</h2>
+      {/* Report Controls */}
+      <div className="bg-surface rounded-lg shadow-sm mb-6">
+        <div className="p-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Date Range
+              </label>
               <select
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
-                className="rounded-lg border border-gray-300 px-3 py-1 text-sm focus:outline-none focus:ring-primary focus:border-primary"
+                value={selectedDateRange}
+                onChange={(e) => setSelectedDateRange(e.target.value)}
+                className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:outline-none focus:ring-primary focus:border-primary"
               >
-                <option value="all">All Status</option>
-                <option value="open">Open</option>
-                <option value="in-progress">In Progress</option>
-                <option value="resolved">Resolved</option>
-                <option value="closed">Closed</option>
+                <option value="today">Today</option>
+                <option value="this-week">This Week</option>
+                <option value="this-month">This Month</option>
+                <option value="last-month">Last Month</option>
+                <option value="custom">Custom Range</option>
               </select>
             </div>
-            <div className="space-y-2">
-              {tickets.map((ticket) => (
-                <div
-                  key={ticket.id}
-                  onClick={() => setSelectedTicket(ticket)}
-                  className={`p-3 rounded-lg cursor-pointer transition-colors ${
-                    selectedTicket?.id === ticket.id
-                      ? 'bg-primary bg-opacity-10'
-                      : 'hover:bg-gray-50'
-                  }`}
-                >
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h3 className="text-sm font-medium text-gray-900">{ticket.subject}</h3>
-                      <p className="text-xs text-gray-500">{ticket.student}</p>
-                    </div>
-                    <span className={`px-2 py-1 text-xs rounded-full ${
-                      ticket.status === 'Open' 
-                        ? 'bg-yellow-100 text-yellow-800'
-                        : ticket.status === 'In Progress'
-                        ? 'bg-blue-100 text-blue-800'
-                        : ticket.status === 'Resolved'
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-gray-100 text-gray-800'
-                    }`}>
-                      {ticket.status}
-                    </span>
-                  </div>
-                  <div className="mt-2 flex justify-between items-center text-xs text-gray-500">
-                    <span>Last updated: {ticket.lastUpdated}</span>
-                    <span className={`px-2 py-1 rounded-full ${
-                      ticket.priority === 'High'
-                        ? 'bg-red-100 text-red-800'
-                        : ticket.priority === 'Medium'
-                        ? 'bg-yellow-100 text-yellow-800'
-                        : 'bg-green-100 text-green-800'
-                    }`}>
-                      {ticket.priority}
-                    </span>
-                  </div>
-                </div>
-              ))}
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Report Type
+              </label>
+              <select
+                value={selectedReport}
+                onChange={(e) => setSelectedReport(e.target.value)}
+                className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:outline-none focus:ring-primary focus:border-primary"
+              >
+                <option value="all">All Reports</option>
+                <option value="collections">Collections Report</option>
+                <option value="outstanding">Outstanding Balance Report</option>
+                <option value="payment-methods">Payment Methods Report</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Strand Filter
+              </label>
+              <select
+                className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:outline-none focus:ring-primary focus:border-primary"
+              >
+                <option value="all">All Strands</option>
+                <option value="stem">STEM</option>
+                <option value="abm">ABM</option>
+                <option value="ict">ICT</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Charts Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <div className="bg-surface p-6 rounded-lg shadow-sm">
+          <h3 className="text-sm font-semibold mb-4">Collections Trend</h3>
+          <div className="h-[300px]">
+            <Line data={collectionTrendData} options={lineOptions} />
+          </div>
+        </div>
+
+        <div className="bg-surface p-6 rounded-lg shadow-sm">
+          <h3 className="text-sm font-semibold mb-4">Payment Methods Distribution</h3>
+          <div className="flex items-start">
+            <div className="w-1/2">
+              <Doughnut data={paymentMethodData} options={{
+                ...doughnutOptions,
+                plugins: {
+                  ...doughnutOptions.plugins,
+                  legend: {
+                    display: false
+                  },
+                  title: {
+                    display: false
+                  }
+                }
+              }} />
+            </div>
+            <div className="w-1/2 mt-8">
+              <table className="min-w-full">
+                <thead>
+                  <tr>
+                    <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase">Method</th>
+                    <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase">Count</th>
+                    <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  <tr>
+                    <td className="px-2 py-1 text-sm">GCash</td>
+                    <td className="px-2 py-1 text-sm">156</td>
+                    <td className="px-2 py-1 text-sm">₱430,000</td>
+                  </tr>
+                  <tr>
+                    <td className="px-2 py-1 text-sm">Bank Transfer</td>
+                    <td className="px-2 py-1 text-sm">98</td>
+                    <td className="px-2 py-1 text-sm">₱322,500</td>
+                  </tr>
+                  <tr>
+                    <td className="px-2 py-1 text-sm">Cash</td>
+                    <td className="px-2 py-1 text-sm">45</td>
+                    <td className="px-2 py-1 text-sm">₱215,000</td>
+                  </tr>
+                  <tr>
+                    <td className="px-2 py-1 text-sm">Credit Card</td>
+                    <td className="px-2 py-1 text-sm">23</td>
+                    <td className="px-2 py-1 text-sm">₱107,500</td>
+                  </tr>
+                  <tr className="font-medium bg-gray-50">
+                    <td className="px-2 py-1 text-sm">Total</td>
+                    <td className="px-2 py-1 text-sm">322</td>
+                    <td className="px-2 py-1 text-sm">₱1,075,000</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Summary Tables */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-surface rounded-lg shadow-sm">
+          <div className="p-6">
+            <h3 className="text-sm font-semibold mb-4">Collection Summary by Strand</h3>
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead>
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Strand</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total Students</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Collected</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Outstanding</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {[
+                    { strand: 'STEM', students: 150, collected: '₱750,000', outstanding: '₱50,000' },
+                    { strand: 'ABM', students: 120, collected: '₱600,000', outstanding: '₱45,000' },
+                    { strand: 'ICT', students: 100, collected: '₱500,000', outstanding: '₱30,000' },
+                  ].map((item) => (
+                    <tr key={item.strand} className="hover:bg-gray-50">
+                      <td className="px-4 py-3 text-sm">{item.strand}</td>
+                      <td className="px-4 py-3 text-sm">{item.students}</td>
+                      <td className="px-4 py-3 text-sm">{item.collected}</td>
+                      <td className="px-4 py-3 text-sm">{item.outstanding}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
 
-        {/* Chat Section */}
-        <div className="lg:col-span-7 bg-surface rounded-lg shadow-sm">
-          {selectedTicket ? (
-            <div className="h-full flex flex-col">
-              {/* Ticket Header */}
-              <div className="p-4 border-b">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h2 className="text-lg font-semibold text-tertiary">{selectedTicket.subject}</h2>
-                    <p className="text-sm text-gray-500">Ticket ID: {selectedTicket.id}</p>
-                  </div>
-                  <select
-                    value={selectedTicket.status}
-                    className="rounded-lg border border-gray-300 px-3 py-1 text-sm focus:outline-none focus:ring-primary focus:border-primary"
-                  >
-                    <option value="Open">Open</option>
-                    <option value="In Progress">In Progress</option>
-                    <option value="Resolved">Resolved</option>
-                    <option value="Closed">Closed</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Messages */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                {selectedTicket.messages.map((message, index) => (
-                  <div
-                    key={index}
-                    className={`flex ${message.sender === 'Admin' ? 'justify-end' : 'justify-start'}`}
-                  >
-                    <div className={`max-w-[70%] rounded-lg p-3 ${
-                      message.sender === 'Admin'
-                        ? 'bg-primary text-white'
-                        : 'bg-gray-100'
-                    }`}>
-                      <p className="text-sm">{message.message}</p>
-                      <p className="text-xs mt-1 opacity-70">{message.timestamp}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Message Input */}
-              <div className="p-4 border-t">
-                <div className="flex space-x-2">
-                  <input
-                    type="text"
-                    value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
-                    placeholder="Type your message..."
-                    className="flex-1 rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-primary focus:border-primary"
-                    onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                  />
-                  <button
-                    onClick={handleSendMessage}
-                    className="bg-primary text-white px-4 py-2 rounded-lg hover:bg-secondary transition-colors"
-                  >
-                    Send
-                  </button>
-                </div>
-              </div>
+        <div className="bg-surface rounded-lg shadow-sm">
+          <div className="p-6">
+            <h3 className="text-sm font-semibold mb-4">Recent Collections</h3>
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead>
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Student</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Method</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {[
+                    { date: '2024-03-21', student: 'John Doe', amount: '₱15,000', method: 'GCash' },
+                    { date: '2024-03-20', student: 'Jane Smith', amount: '₱12,000', method: 'Bank Transfer' },
+                    { date: '2024-03-19', student: 'Bob Wilson', amount: '₱18,000', method: 'Cash' },
+                  ].map((item, idx) => (
+                    <tr key={idx} className="hover:bg-gray-50">
+                      <td className="px-4 py-3 text-sm">{item.date}</td>
+                      <td className="px-4 py-3 text-sm">{item.student}</td>
+                      <td className="px-4 py-3 text-sm">{item.amount}</td>
+                      <td className="px-4 py-3 text-sm">{item.method}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-          ) : (
-            <div className="h-full flex items-center justify-center text-gray-500">
-              Select a ticket to view the conversation
-            </div>
-          )}
+          </div>
         </div>
       </div>
     </div>
